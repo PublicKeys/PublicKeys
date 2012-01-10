@@ -47,7 +47,7 @@
         }
 
         function encrypt($clearText) {
-            if ( $this->publicKey == '' ) return 'error';
+            if ( $this->publicKey == '' ) return 'error - missing public key';
             $cryptText = '';
             while ( $clearText != '' ) {
                 $clear     = substr($clearText, 0, 100);
@@ -59,7 +59,7 @@
         }
         
         function decrypt($cryptText) {
-            if ( $this->privateKey == '' ) return 'error';
+            if ( $this->privateKey == '' ) return 'error - missing private key';
             $clearText = '';
             while ( $cryptText != '' ) {
                 $crypt     = $this->hex2bin(substr($cryptText, 0, 256));
@@ -82,6 +82,25 @@
             // get the public key $keyDetails['key'] from the private key;
             $keyDetails = openssl_pkey_get_details($privateKey);
             file_put_contents($publicKeyFile, $keyDetails['key']);
+        }
+        
+        // decrypt using a symetric key
+        function symDecrypt($cryptText, $key) {
+            $cryptText = $this->hex2bin($cryptText);
+            $iv_size    = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
+            $iv         = mcrypt_create_iv($iv_size, MCRYPT_RAND);
+            $plainText  = mcrypt_decrypt(MCRYPT_RIJNDAEL_256, $key, $cryptText, MCRYPT_MODE_ECB, $iv);
+            
+            return $plainText;
+        }
+        
+        function symEncrypt($plainText, $key) {
+            $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
+            $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
+            $cryptText = mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $key, $plainText, MCRYPT_MODE_ECB, $iv);
+            $cryptText = bin2hex($cryptText);
+            
+            return $cryptText;
         }
         
         function hex2bin($h) {
